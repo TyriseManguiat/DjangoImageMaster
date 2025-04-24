@@ -1,24 +1,25 @@
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+import dj_database_url
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables from a .env file
+# Load .env
 load_dotenv(BASE_DIR / '.env')
 
-# SECURITY WARNING: keep the secret key used in production secret!
+# Security
 SECRET_KEY = os.getenv('SECRET_KEY', 'your-default-secret-key')
+DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 't']
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True').lower() in ['true', '1', 't']
+# Hosts
+ALLOWED_HOSTS = os.getenv(
+    'ALLOWED_HOSTS',
+    'localhost djangoimagemaster.onrender.com'
+).split()
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(' ')
-ALLOWED_HOSTS = ['djangoimagemaster.onrender.com']
-
-
-# Application definition
+# Apps
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -32,8 +33,10 @@ INSTALLED_APPS = [
     'crispy_bootstrap4',
 ]
 
+# Middleware (with WhiteNoise for static files)
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -47,7 +50,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],  # add if you have custom templates
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -62,28 +65,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# Database
-# https://docs.djangoproject.com/en/4.0/ref/settings/#databases
-import dj_database_url
-
+# Database (Postgres on Render via DATABASE_URL, fallback to SQLite)
 DATABASES = {
-    'default': dj_database_url.parse(os.getenv('DATABASE_URL', 'sqlite:///db.sqlite3')),
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600
+    )
 }
 
-# Password validation
+# Password validators
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 # Internationalization
@@ -92,18 +87,20 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Tables
+# django-tables2
 DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap4.html'
 
-# Forms
+# crispy-forms
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
-# Static files (CSS, JavaScript, Images)
+# Static files (with WhiteNoise)
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'mediafiles'
 
-# Default primary key field type
+# Default PK field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
